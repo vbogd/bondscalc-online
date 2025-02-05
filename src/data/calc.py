@@ -11,7 +11,7 @@ def calculate(bond: tuple):
     buy_price = _get_percent(bond[5])
     sell_date = _get_date(bond[6])
     sell_price = _get_percent(bond[7])
-    till_maturity = bond[8] != "sell"
+    till_maturity = bond[8] == "maturity"
 
     if commission is None: return _empty_result
     if tax is None: return _empty_result

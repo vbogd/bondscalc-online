@@ -1,13 +1,19 @@
 from datetime import date, timedelta
 import dash
 from dash import html, dcc, callback, Output, Input
-from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import logging
 
 from data import calculate, write_date, parse_date, load_bond_info as moex_load_bond_info
 
-dash.register_page(__name__, path_template="/calc/<secid>")
+def _title(secid=""):
+    return f"BondsCalc | {secid}"
+
+dash.register_page(
+    __name__,
+    path_template="/calc/<secid>",
+    title=_title,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -80,48 +86,6 @@ def get_sell_type_options(offer_date):
     return res
 
 @callback(
-    Output('load_bond_info', 'children'),
-    Output('ticker', 'value'),
-    Output('coupon', 'value'),
-    Output('par_value', 'value'),
-    Output('buy_price', 'value'),
-    Output('sell_date', 'value'),
-    Output('sell_type', 'options'),
-    Output('sell_type', 'value'),
-    Output('mat_date', 'children'),
-    Output('offer_date', 'children'),
-    Input('location', 'pathname'),
-    Input('load_bond_info', 'children'),
-)
-def load_bond_info(
-    url: str,
-    load_bond_info: str,
-):
-    if load_bond_info != '1': raise PreventUpdate
-    secid = url[url.rfind('/') + 1:]
-    logger.info(f"Loading info for secid {secid} ...")
-    bond_info = moex_load_bond_info(secid)
-    if bond_info:
-        logger.info(f"Loaded info for secid {secid}: {bond_info}")
-    else:
-        logger.error(f"Loading info for secid {secid} failed")
-    mat_date = bond_info.get('MATDATE', '')
-    offer_date = bond_info.get('OFFERDATE', '')
-    sell_type_options = get_sell_type_options(offer_date)
-    return (
-        '0',
-        bond_info.get('SHORTNAME', 'не найдено'),
-        bond_info.get('COUPONPERCENT', ''),
-        bond_info.get('FACEVALUE', ''),
-        bond_info.get('LAST', '') or bond_info.get('PREVPRICE', ''),
-        get_sell_date(mat_date, offer_date),
-        sell_type_options,
-        sell_type_options[0]['value'],
-        mat_date,
-        offer_date,
-    )
-
-@callback(
     Output('sell_date', 'value', allow_duplicate=True),
     Output('sell_price', 'value', allow_duplicate=True),
     Input('sell_type', 'value'),
@@ -148,7 +112,6 @@ Output('result_profitability', 'children'),
     Output('result_current_yield', 'children'),
     Output('result_income', 'children'),
     Output('result_days', 'children'),
-    Input('load_bond_info', 'children'),
     Input('commission', 'value'),
     Input('tax', 'value'),
     Input('coupon', 'value'),
@@ -158,13 +121,10 @@ Output('result_profitability', 'children'),
     Input('sell_date', 'value'),
     Input('sell_price', 'value'),
     Input('sell_type', 'value'),
-    prevent_initial_call=True,
 )
 def run_calculator(
-    load_bond_info: str,
     *args
 ):
-    if load_bond_info != '0': raise PreventUpdate
     print("args:", args)
     result = calculate(args)
     if result:
@@ -178,16 +138,31 @@ def run_calculator(
         return '', '', '', ''
 
 def layout(secid="", **kwargs):
+    logger.info(f"Loading info for secid {secid} ...")
+    bond_info = moex_load_bond_info(secid)
+    if bond_info:
+        logger.info(f"Loaded info for secid {secid}: {bond_info}")
+    else:
+        logger.error(f"Loading info for secid {secid} failed")
+
+    ticker = bond_info.get('SHORTNAME', 'не найдено')
+    coupon = bond_info.get('COUPONPERCENT', '')
+    par_value = bond_info.get('FACEVALUE', '')
+    buy_price = bond_info.get('LAST', '') or bond_info.get('PREVPRICE', '')
+    mat_date = bond_info.get('MATDATE', '')
+    offer_date = bond_info.get('OFFERDATE', '')
+    sell_date = get_sell_date(mat_date, offer_date)
+    sell_type_options = get_sell_type_options(offer_date)
+    sell_type_value = sell_type_options[0]['value']
+
     return dbc.Container(
         [
-            dcc.Location(id='location'),
             dbc.Label('BondsCalc Online'),
-            html.Div(children="1", id="load_bond_info", hidden=True),
             dbc.Row(
                 [
                     dbc.FormFloating(
                         [
-                            dbc.Input(type="text", placeholder="isin", id="ticker", readonly=True),
+                            dbc.Input(type="text", id="ticker", value=ticker, readonly=True),
                             dbc.Label("Тикер"),
                         ]
                     ),
@@ -199,28 +174,28 @@ def layout(secid="", **kwargs):
                 col_input(type="number", id="tax", placeholder="налог", value='13', persistence=True)
             ),
             layout_row(
-                col_input(type="number", id="par_value", placeholder="номинал"),
-                col_input(type="number", id="coupon", placeholder="купон")
+                col_input(type="number", id="par_value", placeholder="номинал", value=par_value),
+                col_input(type="number", id="coupon", placeholder="купон", value=coupon)
             ),
             layout_row(
                 dbc.Label("покупка")
             ),
             layout_row(
                 col_input(type="text", id="buy_date", placeholder="дата", value=write_date(date.today())),
-                col_input(type="number", id="buy_price", placeholder="цена")
+                col_input(type="number", id="buy_price", placeholder="цена", value=buy_price)
             ),
             layout_row(
                 dbc.RadioItems(
-                    options=get_sell_type_options(''),
-                    value="maturity",
+                    options=get_sell_type_options(offer_date),
+                    value=sell_type_value,
                     id="sell_type",
                     inline=True,
                 )
             ),
-            html.Div(children="", id="mat_date", hidden=True),
-            html.Div(children="", id="offer_date", hidden=True),
+            html.Div(children=mat_date, id="mat_date", hidden=True),
+            html.Div(children=offer_date, id="offer_date", hidden=True),
             layout_row(
-                col_input(type="text", id="sell_date", placeholder="дата"),
+                col_input(type="text", id="sell_date", placeholder="дата", value=sell_date),
                 col_input(type="number", id="sell_price", placeholder="цена", value='100')
             ),
             result_card,
