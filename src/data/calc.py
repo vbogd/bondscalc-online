@@ -62,8 +62,11 @@ def _get_percent(v) -> float | None:
     True
     >>> _get_percent(None) is None
     True
+    >>> _get_percent(0)
+    0.0
     """
-    return float(v) / 100 if v else None
+    if v is None or v == '': return None
+    else: return float(v) / 100
 
 def _get_double(v) -> float | None:
     return float(v) if v else None

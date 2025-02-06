@@ -13,15 +13,25 @@ logging.basicConfig(
 app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP], use_pages=True)
 server = app.server
 
-app.layout = html.Div([
-    # html.Div(
-    #         dcc.Link(f"{page['name']} - {page['path']}", href=page["relative_path"])
-    #     ),
-    # html.Div([
-    #     html.Div(
-    #         dcc.Link(f"{page['name']} - {page['path']}", href=page["relative_path"])
-    #     ) for page in dash.page_registry.values()
-    # ]),
+# dbc.Label(
+#     dcc.Link(
+#         "надежные-облигации.рус",
+#         href="https://надежные-облигации.рус/",
+#         target="_blank",
+#         className="card-subtitle, text-decoration-none"
+#     ),
+# )
+
+app.layout = dbc.Container([
+    dbc.Row(
+        dbc.Col([
+            html.H4([
+                "BondsCalc ",
+                html.Sup("Online", className="text-muted")
+            ], className="card-title"),
+        ]),
+        className="g-1 pt-1",
+    ),
     dash.page_container
 ])
 

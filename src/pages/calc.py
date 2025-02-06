@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 import dash
-from dash import html, dcc, callback, Output, Input
+from dash import html, callback, Output, Input
 import dash_bootstrap_components as dbc
 import logging
 
@@ -155,53 +155,46 @@ def layout(secid="", **kwargs):
     sell_type_options = get_sell_type_options(offer_date)
     sell_type_value = sell_type_options[0]['value']
 
-    return dbc.Container(
-        [
-            dbc.Label('BondsCalc Online'),
-            dbc.Row(
-                [
-                    dbc.FormFloating(
-                        [
-                            dbc.Input(type="text", id="ticker", value=ticker, readonly=True),
-                            dbc.Label("Тикер"),
-                        ]
-                    ),
-                ],
-                className="g-1 pt-1",
-            ),
-            layout_row(
-                col_input(type="number", id="commission", placeholder="комиссия", value='0.05', persistence=True),
-                col_input(type="number", id="tax", placeholder="налог", value='13', persistence=True)
-            ),
-            layout_row(
-                col_input(type="number", id="par_value", placeholder="номинал", value=par_value),
-                col_input(type="number", id="coupon", placeholder="купон", value=coupon)
-            ),
-            layout_row(
-                dbc.Label("покупка")
-            ),
-            layout_row(
-                col_input(type="text", id="buy_date", placeholder="дата", value=write_date(date.today())),
-                col_input(type="number", id="buy_price", placeholder="цена", value=buy_price)
-            ),
-            layout_row(
-                dbc.RadioItems(
-                    options=get_sell_type_options(offer_date),
-                    value=sell_type_value,
-                    id="sell_type",
-                    inline=True,
-                )
-            ),
-            html.Div(children=mat_date, id="mat_date", hidden=True),
-            html.Div(children=offer_date, id="offer_date", hidden=True),
-            layout_row(
-                col_input(type="text", id="sell_date", placeholder="дата", value=sell_date),
-                col_input(type="number", id="sell_price", placeholder="цена", value='100')
-            ),
-            result_card,
-        ],
-        # className="p-5",
-    )
-    # return html.Div(
-    #     f"calc secid: {secid}."
-    # )
+    return [
+        dbc.Row(
+            [
+                dbc.FormFloating(
+                    [
+                        dbc.Input(type="text", id="ticker", value=ticker, readonly=True),
+                        dbc.Label("Тикер"),
+                    ]
+                ),
+            ],
+            className="g-1 pt-1",
+        ),
+        layout_row(
+            col_input(type="number", id="commission", placeholder="комиссия", value='0.05', persistence=True),
+            col_input(type="number", id="tax", placeholder="налог", value='13', persistence=True)
+        ),
+        layout_row(
+            col_input(type="number", id="par_value", placeholder="номинал", value=par_value),
+            col_input(type="number", id="coupon", placeholder="купон", value=coupon)
+        ),
+        layout_row(
+            dbc.Label("покупка")
+        ),
+        layout_row(
+            col_input(type="text", id="buy_date", placeholder="дата", value=write_date(date.today())),
+            col_input(type="number", id="buy_price", placeholder="цена", value=buy_price)
+        ),
+        layout_row(
+            dbc.RadioItems(
+                options=get_sell_type_options(offer_date),
+                value=sell_type_value,
+                id="sell_type",
+                inline=True,
+            )
+        ),
+        html.Div(children=mat_date, id="mat_date", hidden=True),
+        html.Div(children=offer_date, id="offer_date", hidden=True),
+        layout_row(
+            col_input(type="text", id="sell_date", placeholder="дата", value=sell_date),
+            col_input(type="number", id="sell_price", placeholder="цена", value='100')
+        ),
+        result_card,
+    ]
