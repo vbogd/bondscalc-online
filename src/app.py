@@ -10,7 +10,7 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s"
 )
 
-app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP], use_pages=True)
+app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP], use_pages=True)
 server = app.server
 
 # dbc.Label(
@@ -23,15 +23,6 @@ server = app.server
 # )
 
 app.layout = dbc.Container([
-    dbc.Row(
-        dbc.Col([
-            html.H4([
-                "BondsCalc ",
-                html.Sup("Online", className="text-muted")
-            ], className="card-title"),
-        ]),
-        className="g-1 pt-1",
-    ),
     dash.page_container
 ])
 

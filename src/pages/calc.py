@@ -17,6 +17,27 @@ dash.register_page(
 
 logger = logging.getLogger(__name__)
 
+def header(show_search = True):
+    hidden_style = {'display': 'none'}
+    return dbc.Row([
+            dbc.Col(
+                html.H3([
+                        "BondsCalc ",
+                        html.Sup("Online", className="text-muted")
+                    ],
+                    className="card-title"
+                ),
+            ),
+            dbc.Col(
+                dbc.Button(html.I(className="bi bi-search"), outline=True, href="/"),
+                width="auto",
+                style=None if show_search else hidden_style,
+            ),
+        ],
+        justify="between",
+        className="g-1 pt-1",
+    )
+
 def col_input(
         type: str,
         id: str,
@@ -156,6 +177,7 @@ def layout(secid="", **kwargs):
     sell_type_value = sell_type_options[0]['value']
 
     return [
+        header(),
         dbc.Row(
             [
                 dbc.FormFloating(

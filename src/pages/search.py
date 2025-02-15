@@ -5,7 +5,12 @@ import logging
 
 from data import moex_search
 
-dash.register_page(__name__, path='/')
+dash.register_page(
+    __name__,
+    path='/',
+    title='BondsCalc | поиск'
+)
+
 logger = logging.getLogger(__name__)
 
 def _get_calc_link(bond: dict):
@@ -33,13 +38,21 @@ def layout(**kwargs):
     return [
         dbc.Row(
             [
-                dbc.Input(
-                    id="isin_search",
-                    type="text",
-                    value="",
-                    placeholder="Название или isin",
-                    persistence=True,
-                    debounce=True,
+                # dbc.Col(
+                #     dbc.Button(html.I(className="bi bi-arrow-left"), outline=True, href="/"),
+                #     width="auto",
+                #     # style=None if show_search else hidden_style,
+                # ),
+                dbc.Col(
+                    dbc.Input(
+                        id="isin_search",
+                        type="search",
+                        value="",
+                        minlength=3,
+                        placeholder="Название или isin",
+                        persistence=True,
+                        debounce=1000,
+                    )
                 ),
             ],
             className="g-1 pt-1",
