@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
+import atexit
 
 import dash
+from apscheduler.triggers.interval import IntervalTrigger
 from dash import Dash
 import dash_bootstrap_components as dbc
 import logging
+from apscheduler.schedulers.background import BackgroundScheduler
+
 
 from data import update_local_bonds_db
 
@@ -14,6 +18,7 @@ logging.basicConfig(
 
 app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP], use_pages=True)
 server = app.server
+scheduler = BackgroundScheduler()
 
 # dbc.Label(
 #     dcc.Link(
@@ -31,6 +36,14 @@ app.layout = dbc.Container([
 
 def init_app():
     update_local_bonds_db()
+    scheduler.add_job(
+        func=update_local_bonds_db,
+        trigger=IntervalTrigger(hours=1),
+        replace_existing=True,
+    )
+    scheduler.start()
+    # Shut down the scheduler when exiting the app
+    atexit.register(lambda: scheduler.shutdown())
 
 
 init_app()
