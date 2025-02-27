@@ -3,7 +3,7 @@ from dash import html, callback, Input, Output
 import dash_bootstrap_components as dbc
 import logging
 
-from data import moex_search
+from data import moex_bonds_db_search, BasicBondInfo
 
 dash.register_page(
     __name__,
@@ -13,16 +13,13 @@ dash.register_page(
 
 logger = logging.getLogger(__name__)
 
-def _get_calc_link(bond: dict):
-    secid = bond['secid']
-    shortname = bond['shortname']
-    isin = bond['isin']
+def _get_calc_link(bond: BasicBondInfo):
     return dbc.ListGroupItem(
         [
-            html.P(shortname, className="mb-0"),
-            html.Small(isin, className="text-muted")
+            html.P(bond.shortname, className="mb-0"),
+            html.Small(bond.isin, className="text-muted")
         ],
-        href=f"calc/{secid}"
+        href=f"calc/{bond.secid}"
     )
 
 @callback(
@@ -33,7 +30,7 @@ def search_isin(isin: str):
     if len(isin) < 3:
         return dbc.ListGroupItem("Введите минимум 3 символа")
     logger.info(f"Search bonds for query: '{isin}' ...")
-    bonds = moex_search(isin)
+    bonds = moex_bonds_db_search(isin)
     logger.info(f"Search bonds for query: '{isin}' - found {len(bonds)} bond(s)")
     if len(bonds) == 0:
         return dbc.ListGroupItem("Ничего не найдено")
