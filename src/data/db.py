@@ -41,13 +41,15 @@ def moex_bonds_db_update(bonds: list[BasicBondInfo]):
 def moex_bonds_db_search(query: str, limit: int = 100) -> list[BasicBondInfo]:
     con = sqlite3.connect(_db_name)
     try:
-        bonds = con.execute(f'''
-            SELECT shortname, secid, isin
-            FROM moex_bonds
-            WHERE (shortname_lc like '%{query.casefold()}%' or isin like '%{query.upper()}%')
-            ORDER BY shortname_lc
-            LIMIT {limit}
-        ''').fetchall()
+        bonds = con.cursor().execute('''
+                SELECT shortname, secid, isin
+                FROM moex_bonds
+                WHERE (shortname_lc like ? or isin like ?)
+                ORDER BY shortname_lc
+                LIMIT ?
+            ''',
+            (f'%{query.casefold()}%', f'%{query.upper()}%', limit)
+        ).fetchall()
         bonds = [BasicBondInfo(*b) for b in bonds]
         return bonds
     except Exception as e:
