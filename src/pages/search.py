@@ -3,7 +3,7 @@ from dash import html, callback, Input, Output
 import dash_bootstrap_components as dbc
 import logging
 
-from data import moex_bonds_db_search, BasicBondInfo
+from data import moex_bonds_db_search, BasicBondInfo, write_date
 
 dash.register_page(
     __name__,
@@ -16,8 +16,30 @@ logger = logging.getLogger(__name__)
 def _get_calc_link(bond: BasicBondInfo):
     return dbc.ListGroupItem(
         [
-            html.P(bond.shortname, className="mb-0"),
-            html.Small(bond.isin, className="text-muted")
+            dbc.Row([
+                dbc.Col(html.H5(bond.shortname, className="card-title"), width="auto"),
+                dbc.Col(html.Span("•", className="text-muted"), className="p-0", width="auto"),
+                dbc.Col(html.Small(bond.isin, className="text-muted")),
+                dbc.Col(
+                    dbc.Badge(
+                        bond.list_level,
+                        pill=True,
+                        color="warning" if (bond.list_level >= 3) else "success",
+                        className="me-1",
+                    ),
+                    width="auto",
+                ),
+            ]),
+
+            dbc.Row([
+                dbc.Col(html.Span("Погашение", className="text-muted")),
+                dbc.Col(_fix_date(bond.mat_date), width="auto")
+            ]),
+
+            dbc.Row([
+                dbc.Col(html.Span("Купон", className="text-muted")),
+                dbc.Col(f"{bond.coupon_percent} %" if bond.coupon_percent else "-", width="auto")
+            ]),
         ],
         href=f"calc/{bond.secid}"
     )
@@ -60,8 +82,18 @@ def layout(**kwargs):
             ],
             className="g-1 pt-1 m-2",
         ),
-        dbc.ListGroup(
-            id="isin_search_result",
-            flush=True,
-        ),
+        dbc.Row(dbc.Col(
+            dbc.ListGroup(
+                id="isin_search_result",
+                flush=True,
+            ),
+        ), className="g-1 pt-1 m-2",),
     ]
+
+# TODO: get rid of this
+def _fix_date(date_str: str) -> str:
+    from dateutil.parser import parse
+    if date_str:
+        return write_date(parse(date_str))
+    else:
+        return ''

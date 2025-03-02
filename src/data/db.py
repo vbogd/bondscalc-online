@@ -17,7 +17,10 @@ def moex_bonds_db_create():
             shortname_lc TEXT NOT NULL,
             shortname TEXT NOT NULL,
             secid TEXT NOT NULL,
-            isin TEXT NOT NULL
+            isin TEXT NOT NULL,
+            mat_date TEXT NOT NULL,
+            coupon_percent REAL,
+            list_level INTEGER NOT NULL
         )
     ''')
     connection.commit()
@@ -30,7 +33,8 @@ def moex_bonds_db_update(bonds: list[BasicBondInfo]):
     cursor.execute("DELETE FROM moex_bonds")
     for b in bonds:
         cursor.execute('''
-                INSERT INTO moex_bonds (shortname_lc, shortname, secid, isin) VALUES (?, ?, ?, ?)
+                INSERT INTO moex_bonds
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             ''',
            (b.shortname.casefold(),) + tuple(b)
        )
@@ -42,7 +46,7 @@ def moex_bonds_db_search(query: str, limit: int = 100) -> list[BasicBondInfo]:
     con = sqlite3.connect(_db_name)
     try:
         bonds = con.cursor().execute('''
-                SELECT shortname, secid, isin
+                SELECT *
                 FROM moex_bonds
                 WHERE (shortname_lc like ? or isin like ?)
                 ORDER BY shortname_lc
@@ -50,7 +54,7 @@ def moex_bonds_db_search(query: str, limit: int = 100) -> list[BasicBondInfo]:
             ''',
             (f'%{query.casefold()}%', f'%{query.upper()}%', limit)
         ).fetchall()
-        bonds = [BasicBondInfo(*b) for b in bonds]
+        bonds = [BasicBondInfo(*b[1:]) for b in bonds]
         return bonds
     except Exception as e:
         logger.error(f"DB search failed. Query: {query}\nError:\n{e}")

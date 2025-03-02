@@ -1,3 +1,4 @@
+from datetime import date
 from typing import NamedTuple
 
 import requests
@@ -23,15 +24,21 @@ class BasicBondInfo(NamedTuple):
     shortname: str
     secid: str
     isin: str
+    # MOEX: MATDATE
+    mat_date: date
+    # MOEX: COUPONPERCENT
+    coupon_percent: float
+    # MOEX: LISTLEVEL
+    list_level: int
 
 
 def load_moex_bonds() -> list[BasicBondInfo]:
-    columns = 'SECID,ISIN,SHORTNAME,STATUS,BOARDID'
+    columns = 'SECID,ISIN,SHORTNAME,STATUS,BOARDID,MATDATE,COUPONPERCENT,LISTLEVEL'
     url = f'http://iss.moex.com/iss/engines/stock/markets/bonds/securities.json?iss.only=securities&securities.columns={columns}'
     j = requests.get(url).json()
     data = _to_dict(j['securities'], columns.split(sep=','))
     data = [
-        BasicBondInfo(b['SHORTNAME'], b['SECID'], b['ISIN'])
+        BasicBondInfo(b['SHORTNAME'], b['SECID'], b['ISIN'], b['MATDATE'], b['COUPONPERCENT'], b['LISTLEVEL'])
         for b in data
         if b['BOARDID'] in _valid_boards
     ]
