@@ -62,7 +62,7 @@ def _filter_by_board(data: list[dict]) -> dict:
 
 def _fix_date(date_str: str) -> str:
     from dateutil.parser import parse
-    if date_str:
+    if date_str and date_str != '0000-00-00':
         return write_date(parse(date_str))
     else:
         return ''
