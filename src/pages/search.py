@@ -1,3 +1,5 @@
+from typing import Any
+
 import dash
 from dash import html, callback, Input, Output
 import dash_bootstrap_components as dbc
@@ -26,26 +28,31 @@ def _get_calc_link(bond: BasicBondInfo):
     if bond.coupon_percent:
         coupon_str = f'{bond.coupon_value} {currency_str(bond.face_unit)} | {bond.coupon_percent} %'
     else: coupon_str = "-"
+
+    def col(children: Any):
+        return dbc.Col(children)
+    def auto_col(children: Any):
+        return dbc.Col(children, width="auto")
+
     return dbc.ListGroupItem(
         [
             dbc.Row([
-                dbc.Col(html.H5(bond.shortname, className="card-title"), width="auto"),
-                dbc.Col(html.Span("•", className="text-muted"), className="p-0", width="auto"),
-                dbc.Col(html.Small(bond.isin, className="text-muted")),
-                dbc.Col(
+                auto_col(html.H5(bond.shortname, className="card-title")),
+                # dbc.Col(html.Span("•", className="text-muted"), className="p-0", width="auto"),
+                col(html.Small(bond.isin, className="text-muted")),
+                auto_col(
                     dbc.Badge(
                         bond.list_level,
                         pill=True,
-                        color="warning" if (bond.list_level >= 3) else "success",
+                        color="warning" if (int(bond.list_level) >= 3) else "success",
                         className="me-1",
                     ),
-                    width="auto",
                 ),
             ]),
 
             dbc.Row([
-                dbc.Col(html.Span("Погашение", className="text-muted")),
-                dbc.Col(_fix_date(bond.mat_date) or _perpetual_mat_date, width="auto")
+                col(html.Span("Погашение", className="text-muted")),
+                auto_col(_fix_date(bond.mat_date) or _perpetual_mat_date)
             ]),
             #
             # dbc.Row([
@@ -54,13 +61,13 @@ def _get_calc_link(bond: BasicBondInfo):
             # ]),
 
             dbc.Row([
-                dbc.Col(html.Span("Выплата купона", className="text-muted")),
-                dbc.Col(_fix_date(bond.coupon_date), width="auto")
+                col(html.Span("Выплата купона", className="text-muted")),
+                auto_col(_fix_date(bond.coupon_date))
             ]),
 
             dbc.Row([
-                dbc.Col(html.Span("Купон", className="text-muted")),
-                dbc.Col(coupon_str, width="auto")
+                col(html.Span("Купон", className="text-muted")),
+                auto_col(coupon_str)
             ]),
         ],
         href=f"calc/{bond.secid}"
@@ -118,7 +125,7 @@ def layout(**kwargs):
 
 def _fix_date(date_str: str) -> str | None:
     from dateutil.parser import parse
-    if date_str == '0000-00-00':
-        return None
-    else:
+    if date_str:
         return write_date(parse(date_str))
+    else:
+        return None

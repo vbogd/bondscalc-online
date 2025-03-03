@@ -24,7 +24,7 @@ class BasicBondInfo(NamedTuple):
     secid: str
     isin: str
     # MOEX: MATDATE
-    # format: YYYY-MM-DD; may be 0000-00-00 for perpetual bonds
+    # format: YYYY-MM-DD; may be '' for perpetual bonds
     mat_date: str
     # MOEX: COUPONPERCENT
     # empty string if unknown
@@ -50,7 +50,18 @@ def load_moex_bonds() -> list[BasicBondInfo]:
     j = requests.get(url).json()
     data = _to_dict(j['securities'], columns.split(sep=','))
     data = [
-        BasicBondInfo(b['SHORTNAME'], b['SECID'], b['ISIN'], b['MATDATE'], b['COUPONPERCENT'], b['LISTLEVEL'], b['COUPONVALUE'], b['NEXTCOUPON'], b['ACCRUEDINT'], b['FACEUNIT'])
+        BasicBondInfo(
+            b['SHORTNAME'],
+            b['SECID'],
+            b['ISIN'],
+            _fix_zeroes_in_date(b['MATDATE']),
+            b['COUPONPERCENT'],
+            b['LISTLEVEL'],
+            b['COUPONVALUE'],
+            b['NEXTCOUPON'],
+            b['ACCRUEDINT'],
+            b['FACEUNIT']
+        )
         for b in data
         if b['BOARDID'] != 'SPOB'
     ]
@@ -78,3 +89,7 @@ def _fix_date(date_str: str) -> str:
         return write_date(parse(date_str))
     else:
         return ''
+
+def _fix_zeroes_in_date(date_str: str) -> str:
+    if date_str != '0000-00-00': return date_str
+    else: return ''
