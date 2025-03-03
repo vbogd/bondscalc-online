@@ -15,7 +15,17 @@ logger = logging.getLogger(__name__)
 
 _perpetual_mat_date = html.Span("Бессрочно", className="text-danger")
 
+def currency_str(curr: str) -> str:
+    if curr == 'SUR': return '₽'
+    elif curr == 'USD': return '$'
+    elif curr == 'EUR': return '€'
+    elif curr == 'CNY': return '¥'
+    else: return curr
+
 def _get_calc_link(bond: BasicBondInfo):
+    if bond.coupon_percent:
+        coupon_str = f'{bond.coupon_value} {currency_str(bond.face_unit)} | {bond.coupon_percent} %'
+    else: coupon_str = "-"
     return dbc.ListGroupItem(
         [
             dbc.Row([
@@ -37,10 +47,20 @@ def _get_calc_link(bond: BasicBondInfo):
                 dbc.Col(html.Span("Погашение", className="text-muted")),
                 dbc.Col(_fix_date(bond.mat_date) or _perpetual_mat_date, width="auto")
             ]),
+            #
+            # dbc.Row([
+            #     dbc.Col(html.Span("НКД", className="text-muted")),
+            #     dbc.Col(f'{bond.nkd} {currency_str(bond.face_unit)}', width="auto")
+            # ]),
+
+            dbc.Row([
+                dbc.Col(html.Span("Выплата купона", className="text-muted")),
+                dbc.Col(_fix_date(bond.coupon_date), width="auto")
+            ]),
 
             dbc.Row([
                 dbc.Col(html.Span("Купон", className="text-muted")),
-                dbc.Col(f"{bond.coupon_percent} %" if bond.coupon_percent else "-", width="auto")
+                dbc.Col(coupon_str, width="auto")
             ]),
         ],
         href=f"calc/{bond.secid}"

@@ -20,7 +20,11 @@ def moex_bonds_db_create():
             isin TEXT NOT NULL,
             mat_date TEXT NOT NULL,
             coupon_percent REAL,
-            list_level INTEGER NOT NULL
+            list_level INTEGER NOT NULL,
+            coupon_value REAL NOT NULL,
+            coupon_date TEXT NOT NULL,
+            nkd REAL NOT NULL,
+            face_unit TEXT NOT NULL
         )
     ''')
     connection.commit()
@@ -34,7 +38,7 @@ def moex_bonds_db_update(bonds: list[BasicBondInfo]):
     for b in bonds:
         cursor.execute('''
                 INSERT INTO moex_bonds
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''',
            (b.shortname.casefold(),) + tuple(b)
        )
@@ -69,3 +73,4 @@ def update_local_bonds_db():
     data = load_moex_bonds()
     logger.info(f'Loaded {len(data)} bonds from MOEX')
     moex_bonds_db_update(data)
+    logger.info(f'Updated {len(data)} bonds in db')

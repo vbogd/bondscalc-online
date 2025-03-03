@@ -27,20 +27,32 @@ class BasicBondInfo(NamedTuple):
     # format: YYYY-MM-DD; may be 0000-00-00 for perpetual bonds
     mat_date: str
     # MOEX: COUPONPERCENT
-    coupon_percent: float
+    # empty string if unknown
+    coupon_percent: str
     # MOEX: LISTLEVEL
-    list_level: int
+    # values: 1, 2 or 3
+    list_level: str
+    # COUPONVALUE
+    # 0 if unknown
+    coupon_value: str
+    # NEXTCOUPON
+    # format: YYYY-MM-DD
+    coupon_date: str
+    # ACCRUEDINT, НКД на дату расчетов, в валюте расчетов
+    nkd: str
+    # FACEUNIT, Валюта номинала
+    face_unit: str
 
 
 def load_moex_bonds() -> list[BasicBondInfo]:
-    columns = 'SECID,ISIN,SHORTNAME,STATUS,BOARDID,MATDATE,COUPONPERCENT,LISTLEVEL'
+    columns = 'SECID,ISIN,SHORTNAME,STATUS,BOARDID,MATDATE,COUPONPERCENT,LISTLEVEL,COUPONVALUE,NEXTCOUPON,ACCRUEDINT,FACEUNIT'
     url = f'http://iss.moex.com/iss/engines/stock/markets/bonds/securities.json?iss.only=securities&securities.columns={columns}'
     j = requests.get(url).json()
     data = _to_dict(j['securities'], columns.split(sep=','))
     data = [
-        BasicBondInfo(b['SHORTNAME'], b['SECID'], b['ISIN'], b['MATDATE'], b['COUPONPERCENT'], b['LISTLEVEL'])
+        BasicBondInfo(b['SHORTNAME'], b['SECID'], b['ISIN'], b['MATDATE'], b['COUPONPERCENT'], b['LISTLEVEL'], b['COUPONVALUE'], b['NEXTCOUPON'], b['ACCRUEDINT'], b['FACEUNIT'])
         for b in data
-        if b['BOARDID'] in _valid_boards
+        if b['BOARDID'] != 'SPOB'
     ]
     return data
 
