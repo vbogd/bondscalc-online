@@ -13,6 +13,8 @@ dash.register_page(
 
 logger = logging.getLogger(__name__)
 
+_perpetual_mat_date = html.Span("Бессрочно", className="text-danger")
+
 def _get_calc_link(bond: BasicBondInfo):
     return dbc.ListGroupItem(
         [
@@ -33,7 +35,7 @@ def _get_calc_link(bond: BasicBondInfo):
 
             dbc.Row([
                 dbc.Col(html.Span("Погашение", className="text-muted")),
-                dbc.Col(_fix_date(bond.mat_date), width="auto")
+                dbc.Col(_fix_date(bond.mat_date) or _perpetual_mat_date, width="auto")
             ]),
 
             dbc.Row([
@@ -50,13 +52,17 @@ def _get_calc_link(bond: BasicBondInfo):
 )
 def search_isin(isin: str):
     if len(isin) < 3:
-        return dbc.ListGroupItem("Введите минимум 3 символа")
+        return html.Span("Введите минимум 3 символа")
     logger.info(f"Search bonds for query: '{isin}' ...")
     bonds = moex_bonds_db_search(isin)
     logger.info(f"Search bonds for query: '{isin}' - found {len(bonds)} bond(s)")
     if len(bonds) == 0:
-        return dbc.ListGroupItem("Ничего не найдено")
-    return [_get_calc_link(bond) for bond in bonds]
+        return html.Span("Ничего не найдено"),
+    try:
+        return [_get_calc_link(bond) for bond in bonds]
+    except Exception as e:
+        logger.exception("Failed to process search query: " + isin, e)
+        return html.Span("Внутреннаая ошибка", className="text-danger")
 
 def layout(**kwargs):
     return [
@@ -90,10 +96,9 @@ def layout(**kwargs):
         ), className="g-1 pt-1 m-2",),
     ]
 
-# TODO: get rid of this
-def _fix_date(date_str: str) -> str:
+def _fix_date(date_str: str) -> str | None:
     from dateutil.parser import parse
-    if date_str:
-        return write_date(parse(date_str))
+    if date_str == '0000-00-00':
+        return None
     else:
-        return ''
+        return write_date(parse(date_str))

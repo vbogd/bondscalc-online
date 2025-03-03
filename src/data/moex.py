@@ -1,4 +1,3 @@
-from datetime import date
 from typing import NamedTuple
 
 import requests
@@ -25,7 +24,8 @@ class BasicBondInfo(NamedTuple):
     secid: str
     isin: str
     # MOEX: MATDATE
-    mat_date: date
+    # format: YYYY-MM-DD; may be 0000-00-00 for perpetual bonds
+    mat_date: str
     # MOEX: COUPONPERCENT
     coupon_percent: float
     # MOEX: LISTLEVEL
