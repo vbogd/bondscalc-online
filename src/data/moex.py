@@ -32,20 +32,30 @@ class BasicBondInfo(NamedTuple):
     # MOEX: LISTLEVEL
     # values: 1, 2 or 3
     list_level: str
-    # COUPONVALUE
+    # MOEX: COUPONVALUE
     # 0 if unknown
     coupon_value: str
-    # NEXTCOUPON
+    # MOEX: NEXTCOUPON
     # format: YYYY-MM-DD
     coupon_date: str
-    # ACCRUEDINT, НКД на дату расчетов, в валюте расчетов
+    # MOEX: ACCRUEDINT, НКД на дату расчетов, в валюте расчетов
     nkd: str
-    # FACEUNIT, Валюта номинала
+    # MOEX: CURRENCYID, Валюта, в которой проводятся расчеты по сделкам
+    currency_id: str
+    # MOEX: FACEUNIT, Валюта номинала
     face_unit: str
+    # MOEX: FACEVALUE
+    face_value: str
+    # MOEX: COUPONPERIOD, Длительность купона
+    coupon_period: str
+    # MOEX: ISSUESIZE, Объем выпуска, штук
+    issue_size: str
+    # MOEX: OFFERDATE, may be ''
+    offer_date: str
 
 
 def load_moex_bonds() -> list[BasicBondInfo]:
-    columns = 'SECID,ISIN,SHORTNAME,STATUS,BOARDID,MATDATE,COUPONPERCENT,LISTLEVEL,COUPONVALUE,NEXTCOUPON,ACCRUEDINT,FACEUNIT'
+    columns = 'SECID,ISIN,SHORTNAME,STATUS,BOARDID,MATDATE,COUPONPERCENT,LISTLEVEL,COUPONVALUE,NEXTCOUPON,ACCRUEDINT,CURRENCYID,FACEUNIT,FACEVALUE,COUPONPERIOD,ISSUESIZE,OFFERDATE'
     url = f'http://iss.moex.com/iss/engines/stock/markets/bonds/securities.json?iss.only=securities&securities.columns={columns}'
     j = requests.get(url).json()
     data = _to_dict(j['securities'], columns.split(sep=','))
@@ -60,10 +70,16 @@ def load_moex_bonds() -> list[BasicBondInfo]:
             b['COUPONVALUE'],
             b['NEXTCOUPON'],
             b['ACCRUEDINT'],
-            b['FACEUNIT']
+            b['CURRENCYID'],
+            b['FACEUNIT'],
+            b['FACEVALUE'],
+            b['COUPONPERIOD'],
+            b['ISSUESIZE'],
+            b['OFFERDATE'],
         )
         for b in data
-        if b['BOARDID'] != 'SPOB'
+        # there are bonds with zeroes in 'NEXTCOUPON' field, f.e. RU000A109K81
+        if (b['BOARDID'] != 'SPOB' and b['NEXTCOUPON'] != '0000-00-00')
     ]
     return data
 
