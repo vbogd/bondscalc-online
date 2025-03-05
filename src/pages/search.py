@@ -5,7 +5,7 @@ from dash import html, callback, Input, Output
 import dash_bootstrap_components as dbc
 import logging
 
-from data import moex_bonds_db_search, BasicBondInfo, write_date
+from data import moex_bonds_db_search, BasicBondInfo
 
 dash.register_page(
     __name__,
@@ -52,7 +52,7 @@ def _get_calc_link(bond: BasicBondInfo):
 
             dbc.Row([
                 col(html.Span("Погашение", className="text-muted")),
-                auto_col(_fix_date(bond.mat_date) or _perpetual_mat_date)
+                auto_col(bond.mat_date or _perpetual_mat_date)
             ]),
             #
             # dbc.Row([
@@ -62,7 +62,7 @@ def _get_calc_link(bond: BasicBondInfo):
 
             dbc.Row([
                 col(html.Span("Выплата купона", className="text-muted")),
-                auto_col(_fix_date(bond.coupon_date))
+                auto_col(bond.coupon_date)
             ]),
 
             dbc.Row([
@@ -122,10 +122,3 @@ def layout(**kwargs):
             ),
         ), className="g-1 pt-1 m-2",),
     ]
-
-def _fix_date(date_str: str) -> str | None:
-    from dateutil.parser import parse
-    if date_str:
-        return write_date(parse(date_str))
-    else:
-        return None

@@ -1,3 +1,5 @@
+from datetime import date
+from dateutil.parser import parse
 from typing import NamedTuple
 
 import requests
@@ -8,7 +10,7 @@ _moex_options = 'iss.json=compact&iss.meta=off&iss.dp=dot'
 
 def load_bond_info(secid: str) -> dict:
     columns = 'marketdata.columns=SECID,BOARDID,LAST&securities.columns=BOARDID,MATDATE,OFFERDATE,SHORTNAME,COUPONPERCENT,FACEVALUE,PREVPRICE,FACEUNIT'
-    url = f'http://iss.moex.com/iss/engines/stock/markets/bonds/securities/{secid}.json?{_moex_options}&{columns}'
+    url = f'https://iss.moex.com/iss/engines/stock/markets/bonds/securities/{secid}.json?{_moex_options}&{columns}'
     j = requests.get(url).json()
     data = [{k : r[i] for i, k in enumerate(j['securities']['columns'])}
                       for r in j['securities']['data']]
@@ -24,8 +26,7 @@ class BasicBondInfo(NamedTuple):
     secid: str
     isin: str
     # MOEX: MATDATE
-    # format: YYYY-MM-DD; may be '' for perpetual bonds
-    mat_date: str
+    mat_date: date
     # MOEX: COUPONPERCENT
     # empty string if unknown
     coupon_percent: str
@@ -36,8 +37,7 @@ class BasicBondInfo(NamedTuple):
     # 0 if unknown
     coupon_value: str
     # MOEX: NEXTCOUPON
-    # format: YYYY-MM-DD
-    coupon_date: str
+    coupon_date: date
     # MOEX: ACCRUEDINT, НКД на дату расчетов, в валюте расчетов
     nkd: str
     # MOEX: CURRENCYID, Валюта, в которой проводятся расчеты по сделкам
@@ -51,12 +51,12 @@ class BasicBondInfo(NamedTuple):
     # MOEX: ISSUESIZE, Объем выпуска, штук
     issue_size: str
     # MOEX: OFFERDATE, may be ''
-    offer_date: str
+    offer_date: date | None
 
 
 def load_moex_bonds() -> list[BasicBondInfo]:
     columns = 'SECID,ISIN,SHORTNAME,STATUS,BOARDID,MATDATE,COUPONPERCENT,LISTLEVEL,COUPONVALUE,NEXTCOUPON,ACCRUEDINT,CURRENCYID,FACEUNIT,FACEVALUE,COUPONPERIOD,ISSUESIZE,OFFERDATE'
-    url = f'http://iss.moex.com/iss/engines/stock/markets/bonds/securities.json?iss.only=securities&securities.columns={columns}'
+    url = f'https://iss.moex.com/iss/engines/stock/markets/bonds/securities.json?iss.only=securities&securities.columns={columns}'
     j = requests.get(url).json()
     data = _to_dict(j['securities'], columns.split(sep=','))
     data = [
@@ -64,18 +64,18 @@ def load_moex_bonds() -> list[BasicBondInfo]:
             b['SHORTNAME'],
             b['SECID'],
             b['ISIN'],
-            _fix_zeroes_in_date(b['MATDATE']),
+            _to_optional_date(b['MATDATE']),
             b['COUPONPERCENT'],
             b['LISTLEVEL'],
             b['COUPONVALUE'],
-            b['NEXTCOUPON'],
+            _to_date(b['NEXTCOUPON']),
             b['ACCRUEDINT'],
             b['CURRENCYID'],
             b['FACEUNIT'],
             b['FACEVALUE'],
             b['COUPONPERIOD'],
             b['ISSUESIZE'],
-            b['OFFERDATE'],
+            _to_optional_date(b['OFFERDATE']),
         )
         for b in data
         # there are bonds with zeroes in 'NEXTCOUPON' field, f.e. RU000A109K81
@@ -100,12 +100,15 @@ def _filter_by_board(data: list[dict]) -> dict:
 
 
 def _fix_date(date_str: str) -> str:
-    from dateutil.parser import parse
     if date_str and date_str != '0000-00-00':
         return write_date(parse(date_str))
     else:
         return ''
 
-def _fix_zeroes_in_date(date_str: str) -> str:
-    if date_str != '0000-00-00': return date_str
-    else: return ''
+def _to_optional_date(date_str: str) -> date | None:
+    if date_str and date_str != '0000-00-00':
+        return date.fromisoformat(date_str)
+    else: return None
+
+def _to_date(date_str: str) -> date:
+    return date.fromisoformat(date_str)
