@@ -41,7 +41,7 @@ def moex_bonds_db_create():
                     mat_date date,
                     coupon_percent REAL,
                     list_level INTEGER NOT NULL,
-                    coupon_value REAL NOT NULL,
+                    coupon_value REAL,
                     coupon_date date NOT NULL,
                     nkd REAL NOT NULL,
                     currency_id TEXT NOT NULL,

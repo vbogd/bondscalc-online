@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Any
 
 import dash
@@ -45,7 +46,7 @@ def _get_calc_link(bond: BasicBondInfo):
 
             dbc.Row([
                 col(html.Span("Погашение", className="text-muted")),
-                auto_col(write_date(bond.mat_date) or _perpetual_mat_date)
+                auto_col(write_optional_date(bond.mat_date) or _perpetual_mat_date)
             ]),
             #
             # dbc.Row([
@@ -115,3 +116,6 @@ def layout(**kwargs):
             ),
         ), className="g-1 pt-1 m-2",),
     ]
+
+def write_optional_date(v: date | None) -> str | None:
+    return None if v is None else write_date(v)

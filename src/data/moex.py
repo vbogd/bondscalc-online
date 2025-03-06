@@ -26,29 +26,28 @@ class BasicBondInfo(NamedTuple):
     secid: str
     isin: str
     # MOEX: MATDATE
-    mat_date: date
+    mat_date: date | None
     # MOEX: COUPONPERCENT
     coupon_percent: float | None
     # MOEX: LISTLEVEL
     # values: 1, 2 or 3
     list_level: int
     # MOEX: COUPONVALUE
-    # 0 if unknown
-    coupon_value: str
+    coupon_value: float | None
     # MOEX: NEXTCOUPON
     coupon_date: date
     # MOEX: ACCRUEDINT, НКД на дату расчетов, в валюте расчетов
-    nkd: str
+    nkd: float
     # MOEX: CURRENCYID, Валюта, в которой проводятся расчеты по сделкам
     currency_id: str
     # MOEX: FACEUNIT, Валюта номинала
     face_unit: str
     # MOEX: FACEVALUE
-    face_value: str
+    face_value: float
     # MOEX: COUPONPERIOD, Длительность купона
-    coupon_period: str
+    coupon_period: int
     # MOEX: ISSUESIZE, Объем выпуска, штук
-    issue_size: str
+    issue_size: int
     # MOEX: OFFERDATE, may be ''
     offer_date: date | None
 
@@ -66,7 +65,8 @@ def load_moex_bonds() -> list[BasicBondInfo]:
             _to_optional_date(b['MATDATE']),
             b['COUPONPERCENT'],
             b['LISTLEVEL'],
-            b['COUPONVALUE'],
+            # MOEX API: 0 if unknown
+            b['COUPONVALUE'] if b['COUPONVALUE'] != 0 else None,
             _to_date(b['NEXTCOUPON']),
             b['ACCRUEDINT'],
             b['CURRENCYID'],
