@@ -28,11 +28,10 @@ class BasicBondInfo(NamedTuple):
     # MOEX: MATDATE
     mat_date: date
     # MOEX: COUPONPERCENT
-    # empty string if unknown
-    coupon_percent: str
+    coupon_percent: float | None
     # MOEX: LISTLEVEL
     # values: 1, 2 or 3
-    list_level: str
+    list_level: int
     # MOEX: COUPONVALUE
     # 0 if unknown
     coupon_value: str

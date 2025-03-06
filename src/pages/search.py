@@ -5,7 +5,7 @@ from dash import html, callback, Input, Output
 import dash_bootstrap_components as dbc
 import logging
 
-from data import moex_bonds_db_search, BasicBondInfo
+from data import moex_bonds_db_search, BasicBondInfo, write_date, currency_str
 
 dash.register_page(
     __name__,
@@ -16,13 +16,6 @@ dash.register_page(
 logger = logging.getLogger(__name__)
 
 _perpetual_mat_date = html.Span("Бессрочно", className="text-danger")
-
-def currency_str(curr: str) -> str:
-    if curr == 'SUR': return '₽'
-    elif curr == 'USD': return '$'
-    elif curr == 'EUR': return '€'
-    elif curr == 'CNY': return '¥'
-    else: return curr
 
 def _get_calc_link(bond: BasicBondInfo):
     if bond.coupon_percent:
@@ -52,7 +45,7 @@ def _get_calc_link(bond: BasicBondInfo):
 
             dbc.Row([
                 col(html.Span("Погашение", className="text-muted")),
-                auto_col(bond.mat_date or _perpetual_mat_date)
+                auto_col(write_date(bond.mat_date) or _perpetual_mat_date)
             ]),
             #
             # dbc.Row([
@@ -62,7 +55,7 @@ def _get_calc_link(bond: BasicBondInfo):
 
             dbc.Row([
                 col(html.Span("Выплата купона", className="text-muted")),
-                auto_col(bond.coupon_date)
+                auto_col(write_date(bond.coupon_date))
             ]),
 
             dbc.Row([

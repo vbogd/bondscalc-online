@@ -28,52 +28,56 @@ def _db_connection():
 
 
 def moex_bonds_db_create():
-    connection = _db_connection()
-    cursor = connection.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS moex_bonds
-        (
-            shortname_lc TEXT NOT NULL,
-            shortname TEXT NOT NULL,
-            secid TEXT NOT NULL,
-            isin TEXT NOT NULL,
-            mat_date date,
-            coupon_percent REAL,
-            list_level INTEGER NOT NULL,
-            coupon_value REAL NOT NULL,
-            coupon_date date NOT NULL,
-            nkd REAL NOT NULL,
-            currency_id TEXT NOT NULL,
-            face_unit TEXT NOT NULL,
-            face_value REAL NOT NULL,
-            coupon_period INTEGER NOT NULL,
-            issue_size INTEGER NOT NULL,
-            offer_date date
-        )
-    ''')
-    connection.commit()
-    connection.close()
+    con = _db_connection()
+    try:
+        with con:
+            con.execute('''
+                CREATE TABLE IF NOT EXISTS moex_bonds
+                (
+                    shortname_lc TEXT NOT NULL,
+                    shortname TEXT NOT NULL,
+                    secid TEXT NOT NULL,
+                    isin TEXT NOT NULL,
+                    mat_date date,
+                    coupon_percent REAL,
+                    list_level INTEGER NOT NULL,
+                    coupon_value REAL NOT NULL,
+                    coupon_date date NOT NULL,
+                    nkd REAL NOT NULL,
+                    currency_id TEXT NOT NULL,
+                    face_unit TEXT NOT NULL,
+                    face_value REAL NOT NULL,
+                    coupon_period INTEGER NOT NULL,
+                    issue_size INTEGER NOT NULL,
+                    offer_date date
+                )
+            ''')
+    finally:
+        con.close()
 
 
 def moex_bonds_db_update(bonds: list[BasicBondInfo]):
-    connection = _db_connection()
-    cursor = connection.cursor()
-    cursor.execute("DELETE FROM moex_bonds")
-    for b in bonds:
-        cursor.execute('''
-                INSERT INTO moex_bonds
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''',
-           (b.shortname.casefold(),) + tuple(b)
-       )
-    connection.commit()
-    connection.close()
+    con = _db_connection()
+    try:
+        with con:
+            con.execute("DELETE FROM moex_bonds")
+            for b in bonds:
+                con.execute('''
+                        INSERT INTO moex_bonds
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''',
+                   (b.shortname.casefold(),) + tuple(b)
+               )
+    except Exception as e:
+        logger.error(f"Failed to update bonds:\n{e}")
+    finally:
+        con.close()
 
 
 def moex_bonds_db_search(query: str, limit: int = 100) -> list[BasicBondInfo]:
     con = _db_connection()
     try:
-        bonds = con.cursor().execute('''
+        bonds = con.execute('''
                 SELECT *
                 FROM moex_bonds
                 WHERE (shortname_lc like ? or isin like ?)
