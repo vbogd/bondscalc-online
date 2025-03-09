@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 import dash
-from dash import html, callback, Output, Input
+from dash import html, callback, Output, Input, State
 import dash_bootstrap_components as dbc
 import logging
 
@@ -110,14 +110,13 @@ def get_sell_type_options(offer_date):
     Output('sell_date', 'value', allow_duplicate=True),
     Output('sell_price', 'value', allow_duplicate=True),
     Input('sell_type', 'value'),
-    Input('sell_price', 'value'),
-    Input('sell_date', 'value'),
+    State('sell_price', 'value'),
     Input('mat_date', 'children'),
     Input('offer_date', 'children'),
     Input('buy_date', 'value'),
     prevent_initial_call=True,
 )
-def switch_sell_type(sell_type, sell_price, sell_date, mat_date, offer_date, buy_date):
+def switch_sell_type(sell_type, sell_price, mat_date, offer_date, buy_date):
     if sell_type == 'maturity':
         sell_date = mat_date
         sell_price = 100
