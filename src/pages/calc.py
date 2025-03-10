@@ -1,10 +1,13 @@
 from datetime import date, timedelta
+from typing import Any
+
 import dash
 from dash import html, callback, Output, Input, State
 import dash_bootstrap_components as dbc
 import logging
 
-from data import calculate, write_date, parse_date, load_bond_info as moex_load_bond_info
+from data import calculate, load_bond_info as moex_load_bond_info, moex_bonds_db_get
+
 
 def _title(secid=""):
     return f"BondsCalc | {secid}"
@@ -42,7 +45,7 @@ def col_input(
         type: str,
         id: str,
         placeholder: str,
-        value: str = "",
+        value: Any,
         persistence: bool = False,
 ):
     return dbc.Col(
@@ -91,13 +94,10 @@ def layout_row(*arg):
     )
 
 def get_sell_date(mat_date, offer_date):
-    if offer_date:
-        return offer_date
-    else:
-        return mat_date
+    return offer_date or mat_date
 
-def get_sell_type_options(offer_date):
-    has_offer = offer_date != ''
+def get_sell_type_options(offer_date: date | None):
+    has_offer = offer_date is not None
     res = [
         {"label": "до погашения", "value": "maturity"},
         {"label": "продажа", "value": "sell"},
@@ -124,7 +124,7 @@ def switch_sell_type(sell_type, sell_price, mat_date, offer_date, buy_date):
         sell_date = offer_date
         sell_price = 100
     else:
-        sell_date = write_date(parse_date(buy_date) + timedelta(days=1))
+        sell_date = date.fromisoformat(buy_date) + timedelta(days=1)
     return sell_date, sell_price
 
 @callback(
@@ -159,18 +159,27 @@ def run_calculator(
 
 def layout(secid="", **kwargs):
     logger.info(f"Loading info for secid {secid} ...")
-    bond_info = moex_load_bond_info(secid)
-    if bond_info:
+    moex_bond_info = moex_load_bond_info(secid)
+    bond_info = moex_bonds_db_get(secid)
+    if moex_bond_info and bond_info:
         logger.info(f"Loaded info for secid {secid}: {bond_info}")
     else:
         logger.error(f"Loading info for secid {secid} failed")
 
-    ticker = bond_info.get('SHORTNAME', 'не найдено')
-    coupon = bond_info.get('COUPONPERCENT', '')
-    par_value = bond_info.get('FACEVALUE', '')
-    buy_price = bond_info.get('LAST', '') or bond_info.get('PREVPRICE', '')
-    mat_date = bond_info.get('MATDATE', '')
-    offer_date = bond_info.get('OFFERDATE', '')
+    buy_price = moex_bond_info.get('LAST', '') or moex_bond_info.get('PREVPRICE', '')
+    ticker = 'не найдено'
+    coupon = None
+    par_value = None
+    mat_date = None
+    offer_date = None
+
+    if bond_info:
+        ticker = bond_info.shortname
+        coupon = bond_info.coupon_percent
+        par_value = bond_info.face_value
+        mat_date = bond_info.mat_date
+        offer_date = bond_info.offer_date
+
     sell_date = get_sell_date(mat_date, offer_date)
     sell_type_options = get_sell_type_options(offer_date)
     sell_type_value = sell_type_options[0]['value']
@@ -200,7 +209,7 @@ def layout(secid="", **kwargs):
             dbc.Label("покупка")
         ),
         layout_row(
-            col_input(type="text", id="buy_date", placeholder="дата", value=write_date(date.today())),
+            col_input(type="date", id="buy_date", placeholder="дата", value=date.today()),
             col_input(type="number", id="buy_price", placeholder="цена", value=buy_price)
         ),
         layout_row(
@@ -214,7 +223,7 @@ def layout(secid="", **kwargs):
         html.Div(children=mat_date, id="mat_date", hidden=True),
         html.Div(children=offer_date, id="offer_date", hidden=True),
         layout_row(
-            col_input(type="text", id="sell_date", placeholder="дата", value=sell_date),
+            col_input(type="date", id="sell_date", placeholder="дата", value=sell_date),
             col_input(type="number", id="sell_price", placeholder="цена", value='100')
         ),
         result_card,

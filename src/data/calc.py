@@ -72,8 +72,7 @@ def _get_double(v) -> float | None:
     return float(v) if v else None
 
 def _get_date(v: str) -> date | None :
-    from .util import parse_date
-    return parse_date(v) if (v and len(v) == 10) else None
+    return date.fromisoformat(v) if (v and len(v) == 10) else None
 
 def _days_between(start: date, end: date) -> int:
     return (end - start).days

@@ -80,11 +80,11 @@ def moex_bonds_db_search(query: str, limit: int = 100) -> list[BasicBondInfo]:
         bonds = con.execute('''
                 SELECT *
                 FROM moex_bonds
-                WHERE (shortname_lc like ? or isin like ?)
+                WHERE (shortname_lc like ? or isin like ? or secid = ?)
                 ORDER BY shortname_lc
                 LIMIT ?
             ''',
-            (f'%{query.casefold()}%', f'%{query.upper()}%', limit)
+            (f'%{query.casefold()}%', f'%{query.upper()}%', query, limit)
         ).fetchall()
         bonds = [BasicBondInfo(*b[1:]) for b in bonds]
         return bonds
@@ -93,6 +93,13 @@ def moex_bonds_db_search(query: str, limit: int = 100) -> list[BasicBondInfo]:
         return []
     finally:
         con.close()
+
+def moex_bonds_db_get(secid: str) -> BasicBondInfo | None:
+    bonds = moex_bonds_db_search(secid, limit=1)
+    if len(bonds) == 1:
+        return bonds[0]
+    else:
+        return None
 
 
 def update_local_bonds_db():
