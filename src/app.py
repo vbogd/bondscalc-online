@@ -8,8 +8,7 @@ import dash_bootstrap_components as dbc
 import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 
-
-from data import update_local_bonds_db
+from data import update_local_bonds_db, db_create_tables
 
 logging.basicConfig(
     level=logging.INFO,
@@ -35,6 +34,7 @@ app.layout = dbc.Container([
 
 
 def init_app():
+    db_create_tables()
     update_local_bonds_db()
     scheduler.add_job(
         func=update_local_bonds_db,

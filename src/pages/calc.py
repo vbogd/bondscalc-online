@@ -65,20 +65,29 @@ result_card = dbc.Card(
             [
                 # html.H4("Card title", className="card-title"),
                 dbc.Row([
-                    dbc.Col(html.Div("доходность, год", className="card-text")),
-                    dbc.Col(html.Div("", className="card-text", id="result_profitability"), width="auto")
+                    dbc.Col(html.Span("доходность, год", className="card-text")),
+                    dbc.Col([
+                        html.Span("", className="card-text", id="result_profitability"),
+                        html.Span("%", className="card-text ms-1")
+                    ], width="auto")
                 ], justify="between"),
                 dbc.Row([
-                    dbc.Col(html.Div("тек. доходность", className="card-text")),
-                    dbc.Col(html.Div("", className="card-text", id="result_current_yield"), width="auto")
+                    dbc.Col(html.Span("тек. доходность", className="card-text")),
+                    dbc.Col([
+                        html.Span("", className="card-text", id="result_current_yield"),
+                        html.Span("%", className="card-text ms-1")
+                    ], width="auto")
                 ], justify="between"),
                 dbc.Row([
-                    dbc.Col(html.Div("прибыль", className="card-text")),
-                    dbc.Col(html.Div("", className="card-text", id="result_income"), width="auto")
+                    dbc.Col(html.Span("прибыль", className="card-text")),
+                    dbc.Col([
+                        html.Span("", className="card-text", id="result_income"),
+                        html.Span("₽", className="card-text ms-1")
+                    ], width="auto")
                 ], justify="between"),
                 dbc.Row([
-                    dbc.Col(html.Div("срок, дней", className="card-text")),
-                    dbc.Col(html.Div("", className="card-text", id="result_days"), width="auto")
+                    dbc.Col(html.Span("срок, дней", className="card-text")),
+                    dbc.Col(html.Span("", className="card-text", id="result_days"), width="auto")
                 ], justify="between"),
             ]
         ),
@@ -149,9 +158,9 @@ def run_calculator(
     result = calculate(args)
     if result:
         return (
-            f"{round(result['profitability'], 2)} %",
-            f"{round(result['current_yield'], 2)} %",
-            f"{round(result['income'], 2)} ₽",
+            f"{round(result['profitability'], 2)}",
+            f"{round(result['current_yield'], 2)}",
+            f"{round(result['income'], 2)}",
             f"{result['days']:,}".replace(',',' '),
         )
     else:

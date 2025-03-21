@@ -1,6 +1,7 @@
 import datetime
 import sqlite3
 import logging
+from sqlite3 import Connection
 
 from .moex import BasicBondInfo, load_moex_bonds
 
@@ -23,37 +24,42 @@ sqlite3.register_adapter(datetime.date, _adapt_date_iso)
 sqlite3.register_converter("date", _convert_date_iso)
 # end of configure database
 
-def _db_connection():
+def _db_connection() -> Connection:
     return sqlite3.connect(_db_name, detect_types=sqlite3.PARSE_DECLTYPES)
 
 
-def moex_bonds_db_create():
-    con = _db_connection()
-    try:
-        with con:
-            con.execute('''
-                CREATE TABLE IF NOT EXISTS moex_bonds
-                (
-                    shortname_lc TEXT NOT NULL,
-                    shortname TEXT NOT NULL,
-                    secid TEXT NOT NULL,
-                    isin TEXT NOT NULL,
-                    mat_date date,
-                    coupon_percent REAL,
-                    list_level INTEGER NOT NULL,
-                    coupon_value REAL,
-                    coupon_date date NOT NULL,
-                    nkd REAL NOT NULL,
-                    currency_id TEXT NOT NULL,
-                    face_unit TEXT NOT NULL,
-                    face_value REAL NOT NULL,
-                    coupon_period INTEGER NOT NULL,
-                    issue_size INTEGER NOT NULL,
-                    offer_date date
-                )
-            ''')
-    finally:
-        con.close()
+def _db_create_moex_marketdata_table(con: Connection):
+    con.execute('''DROP TABLE IF EXISTS moex_marketdata''')
+    con.execute('''
+        CREATE TABLE moex_marketdata(
+            secid TEXT NOT NULL PRIMARY KEY,
+            last REAL
+        )
+    ''')
+
+
+def _db_create_moex_bonds_table(con: Connection):
+    con.execute('''DROP TABLE IF EXISTS moex_bonds''')
+    con.execute('''
+        CREATE TABLE IF NOT EXISTS moex_bonds(
+            shortname_lc TEXT NOT NULL,
+            shortname TEXT NOT NULL,
+            secid TEXT NOT NULL,
+            isin TEXT NOT NULL,
+            mat_date date,
+            coupon_percent REAL,
+            list_level INTEGER NOT NULL,
+            coupon_value REAL,
+            coupon_date date NOT NULL,
+            nkd REAL NOT NULL,
+            currency_id TEXT NOT NULL,
+            face_unit TEXT NOT NULL,
+            face_value REAL NOT NULL,
+            coupon_period INTEGER NOT NULL,
+            issue_size INTEGER NOT NULL,
+            offer_date date
+        )
+    ''')
 
 
 def moex_bonds_db_update(bonds: list[BasicBondInfo]):
@@ -102,8 +108,17 @@ def moex_bonds_db_get(secid: str) -> BasicBondInfo | None:
         return None
 
 
+def db_create_tables():
+    con = _db_connection()
+    try:
+        with con:
+            _db_create_moex_marketdata_table(con)
+            _db_create_moex_bonds_table(con)
+    finally:
+        con.close()
+
+
 def update_local_bonds_db():
-    moex_bonds_db_create()
     logger.info(f'Loading bonds from MOEX...')
     data = load_moex_bonds()
     logger.info(f'Loaded {len(data)} bonds from MOEX')
