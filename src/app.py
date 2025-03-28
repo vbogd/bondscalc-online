@@ -35,13 +35,13 @@ app.layout = dbc.Container([
 
 def init_app():
     db_create_tables()
+    scheduler.start()
     update_local_bonds_db()
     scheduler.add_job(
         func=update_local_bonds_db,
         trigger=IntervalTrigger(hours=1),
         replace_existing=True,
     )
-    scheduler.start()
     # Shut down the scheduler when exiting the app
     atexit.register(lambda: scheduler.shutdown())
 

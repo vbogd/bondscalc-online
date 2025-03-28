@@ -33,7 +33,7 @@ def _db_create_moex_marketdata_table(con: Connection):
     con.execute('''
         CREATE TABLE moex_marketdata(
             secid TEXT NOT NULL PRIMARY KEY,
-            last REAL
+            last REAL NOT NULL
         )
     ''')
 
@@ -57,7 +57,9 @@ def _db_create_moex_bonds_table(con: Connection):
             face_value REAL NOT NULL,
             coupon_period INTEGER NOT NULL,
             issue_size INTEGER NOT NULL,
-            offer_date date
+            offer_date date,
+            prev_price REAL,
+            reg_number TEXT
         )
     ''')
 
@@ -70,7 +72,7 @@ def moex_bonds_db_update(bonds: list[BasicBondInfo]):
             for b in bonds:
                 con.execute('''
                         INSERT INTO moex_bonds
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''',
                    (b.shortname.casefold(),) + tuple(b)
                )

@@ -32,7 +32,7 @@ class BasicBondInfo(NamedTuple):
     # MOEX: LISTLEVEL
     # values: 1, 2 or 3
     list_level: int
-    # MOEX: COUPONVALUE
+    # MOEX: COUPONVALUE, 0 if unknown
     coupon_value: float | None
     # MOEX: NEXTCOUPON
     coupon_date: date
@@ -50,10 +50,14 @@ class BasicBondInfo(NamedTuple):
     issue_size: int
     # MOEX: OFFERDATE, may be ''
     offer_date: date | None
+    # MOEX: PREVPRICE
+    prev_price: float | None
+    # MOEX: REGNUMBER
+    reg_number: str | None
 
 
 def load_moex_bonds() -> list[BasicBondInfo]:
-    columns = 'SECID,ISIN,SHORTNAME,STATUS,BOARDID,MATDATE,COUPONPERCENT,LISTLEVEL,COUPONVALUE,NEXTCOUPON,ACCRUEDINT,CURRENCYID,FACEUNIT,FACEVALUE,COUPONPERIOD,ISSUESIZE,OFFERDATE'
+    columns = 'SECID,ISIN,SHORTNAME,STATUS,BOARDID,MATDATE,COUPONPERCENT,LISTLEVEL,COUPONVALUE,NEXTCOUPON,ACCRUEDINT,CURRENCYID,FACEUNIT,FACEVALUE,COUPONPERIOD,ISSUESIZE,OFFERDATE,PREVPRICE,REGNUMBER'
     url = f'https://iss.moex.com/iss/engines/stock/markets/bonds/securities.json?iss.only=securities&securities.columns={columns}'
     j = requests.get(url).json()
     data = _to_dict(j['securities'], columns.split(sep=','))
@@ -75,6 +79,8 @@ def load_moex_bonds() -> list[BasicBondInfo]:
             b['COUPONPERIOD'],
             b['ISSUESIZE'],
             _to_optional_date(b['OFFERDATE']),
+            float(b['PREVPRICE']) if b['PREVPRICE'] is not None else None,
+            b['REGNUMBER'],
         )
         for b in data
         # there are bonds with zeroes in 'NEXTCOUPON' field, f.e. RU000A109K81
@@ -111,3 +117,8 @@ def _to_optional_date(date_str: str) -> date | None:
 
 def _to_date(date_str: str) -> date:
     return date.fromisoformat(date_str)
+
+def _to_optional_float(float_str: str) -> float | None:
+    if float_str == '':
+        return None
+    else: float(float_str)
