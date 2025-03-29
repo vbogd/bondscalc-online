@@ -32,7 +32,7 @@ app.layout = dbc.Container([
     dash.page_container
 ])
 
-
+# TODO: schedule update_local_db_marketdata calls
 def init_app():
     db_create_tables()
     scheduler.start()

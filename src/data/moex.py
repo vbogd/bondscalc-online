@@ -8,19 +8,6 @@ from .util import write_date
 _moex_options = 'iss.json=compact&iss.meta=off&iss.dp=dot'
 
 
-def load_bond_info(secid: str) -> dict:
-    columns = 'marketdata.columns=SECID,BOARDID,LAST&securities.columns=BOARDID,MATDATE,OFFERDATE,SHORTNAME,COUPONPERCENT,FACEVALUE,PREVPRICE,FACEUNIT'
-    url = f'https://iss.moex.com/iss/engines/stock/markets/bonds/securities/{secid}.json?{_moex_options}&{columns}'
-    j = requests.get(url).json()
-    data = [{k : r[i] for i, k in enumerate(j['securities']['columns'])}
-                      for r in j['securities']['data']]
-    data = _filter_by_board(data)
-    fixed_dates = {c : _fix_date(data[c]) for c in ['MATDATE', 'OFFERDATE'] if c in data}
-    market_data = _to_dict(j['marketdata'], ['SECID', 'BOARDID', 'LAST'])
-    market_data = _filter_by_board(market_data)
-    return data | market_data | fixed_dates
-
-
 class BasicBondInfo(NamedTuple):
     shortname: str
     secid: str
@@ -54,11 +41,12 @@ class BasicBondInfo(NamedTuple):
     prev_price: float | None
     # MOEX: REGNUMBER
     reg_number: str | None
+    # NOTE: update 'select' in db.py when adding more columns
 
 
-def load_moex_bonds() -> list[BasicBondInfo]:
+def load_moex_securities() -> list[BasicBondInfo]:
     columns = 'SECID,ISIN,SHORTNAME,STATUS,BOARDID,MATDATE,COUPONPERCENT,LISTLEVEL,COUPONVALUE,NEXTCOUPON,ACCRUEDINT,CURRENCYID,FACEUNIT,FACEVALUE,COUPONPERIOD,ISSUESIZE,OFFERDATE,PREVPRICE,REGNUMBER'
-    url = f'https://iss.moex.com/iss/engines/stock/markets/bonds/securities.json?iss.only=securities&securities.columns={columns}'
+    url = f'https://iss.moex.com/iss/engines/stock/markets/bonds/securities.json?{_moex_options}&iss.only=securities&securities.columns={columns}'
     j = requests.get(url).json()
     data = _to_dict(j['securities'], columns.split(sep=','))
     data = [
@@ -87,6 +75,25 @@ def load_moex_bonds() -> list[BasicBondInfo]:
         if (b['BOARDID'] != 'SPOB' and b['NEXTCOUPON'] != '0000-00-00')
     ]
     return data
+
+class BondMarketData(NamedTuple):
+    secid: str
+    last_price: float
+
+
+def load_moex_marketdata() -> list[BondMarketData]:
+    columns = 'BOARDID,SECID,LAST'
+    url = f'https://iss.moex.com/iss/engines/stock/markets/bonds/securities.json?{_moex_options}&iss.only=marketdata,dataversion&marketdata.columns={columns}'
+    j = requests.get(url).json()
+    data = _to_dict(j['marketdata'], columns.split(sep=','))
+    return [
+        BondMarketData(
+            r['SECID'],
+            float(r['LAST']),
+        )
+        for r in data
+        if (r['BOARDID'] != 'SPOB' and r['LAST'] is not None)
+    ]
 
 
 def _to_dict(moex_json, columns: list[str]):
@@ -117,8 +124,3 @@ def _to_optional_date(date_str: str) -> date | None:
 
 def _to_date(date_str: str) -> date:
     return date.fromisoformat(date_str)
-
-def _to_optional_float(float_str: str) -> float | None:
-    if float_str == '':
-        return None
-    else: float(float_str)

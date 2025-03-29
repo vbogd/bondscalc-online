@@ -3,7 +3,7 @@ import sqlite3
 import logging
 from sqlite3 import Connection
 
-from .moex import BasicBondInfo, load_moex_bonds
+from .moex import BasicBondInfo, load_moex_marketdata, load_moex_securities, BondMarketData
 
 # Useful docs:
 # - https://pradyunsg-cpython-lutra-testing.readthedocs.io/en/latest/library/sqlite3.html#sqlite3-adapter-converter-recipes
@@ -32,8 +32,8 @@ def _db_create_moex_marketdata_table(con: Connection):
     con.execute('''DROP TABLE IF EXISTS moex_marketdata''')
     con.execute('''
         CREATE TABLE moex_marketdata(
-            secid TEXT NOT NULL PRIMARY KEY,
-            last REAL NOT NULL
+            secid      TEXT NOT NULL PRIMARY KEY,
+            last_price REAL NOT NULL
         )
     ''')
 
@@ -76,8 +76,9 @@ def moex_bonds_db_update(bonds: list[BasicBondInfo]):
                     ''',
                    (b.shortname.casefold(),) + tuple(b)
                )
+        logger.info(f'Updated {len(bonds)} records in moex_bonds table')
     except Exception as e:
-        logger.error(f"Failed to update bonds:\n{e}")
+        logger.error(f"Failed to update moex_bonds table:\n{e}")
     finally:
         con.close()
 
@@ -86,15 +87,21 @@ def moex_bonds_db_search(query: str, limit: int = 100) -> list[BasicBondInfo]:
     con = _db_connection()
     try:
         bonds = con.execute('''
-                SELECT *
+                SELECT
+                    shortname, moex_bonds.secid, isin, mat_date, coupon_percent,
+                    list_level, coupon_value, coupon_date, nkd, currency_id,
+                    face_unit, face_value, coupon_period, issue_size, offer_date,
+                    ifnull(last_price, prev_price) as price,
+                    reg_number
                 FROM moex_bonds
-                WHERE (shortname_lc like ? or isin like ? or secid = ?)
+                LEFT JOIN moex_marketdata ON moex_bonds.secid = moex_marketdata.secid
+                WHERE (shortname_lc like ? or isin like ? or moex_bonds.secid = ?)
                 ORDER BY shortname_lc
                 LIMIT ?
             ''',
             (f'%{query.casefold()}%', f'%{query.upper()}%', query, limit)
         ).fetchall()
-        bonds = [BasicBondInfo(*b[1:]) for b in bonds]
+        bonds = [BasicBondInfo(*b) for b in bonds]
         return bonds
     except Exception as e:
         logger.error(f"DB search failed. Query: {query}\nError:\n{e}")
@@ -110,6 +117,24 @@ def moex_bonds_db_get(secid: str) -> BasicBondInfo | None:
         return None
 
 
+def moex_marketdata_db_update(rows: list[BondMarketData]):
+    con = _db_connection()
+    try:
+        with con:
+            for r in rows:
+                con.execute('''
+                        INSERT OR REPLACE INTO moex_marketdata
+                        VALUES(?, ?)
+                    ''',
+                    tuple(r)
+                )
+        logger.info(f'Updated {len(rows)} record(s) in moex_marketdata table')
+    except Exception as e:
+        logger.error(f"Failed to update moex_marketdata table:\n{e}")
+    finally:
+        con.close()
+
+
 def db_create_tables():
     con = _db_connection()
     try:
@@ -121,8 +146,14 @@ def db_create_tables():
 
 
 def update_local_bonds_db():
-    logger.info(f'Loading bonds from MOEX...')
-    data = load_moex_bonds()
-    logger.info(f'Loaded {len(data)} bonds from MOEX')
+    logger.info(f'Loading bond securities from MOEX...')
+    data = load_moex_securities()
+    logger.info(f'Loaded {len(data)} bond securities from MOEX')
     moex_bonds_db_update(data)
-    logger.info(f'Updated {len(data)} bonds in db')
+
+
+def update_local_db_marketdata():
+    logger.info(f'Loading bonds marketdata from MOEX...')
+    data = load_moex_marketdata()
+    logger.info(f'Loaded {len(data)} bonds marketdata from MOEX')
+    moex_marketdata_db_update(data)

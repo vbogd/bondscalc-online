@@ -6,7 +6,7 @@ from dash import html, callback, Output, Input, State
 import dash_bootstrap_components as dbc
 import logging
 
-from data import calculate, load_bond_info as moex_load_bond_info, moex_bonds_db_get
+from data import calculate, moex_bonds_db_get
 
 
 def _title(secid=""):
@@ -168,14 +168,13 @@ def run_calculator(
 
 def layout(secid="", **kwargs):
     logger.info(f"Loading info for secid {secid} ...")
-    moex_bond_info = moex_load_bond_info(secid)
     bond_info = moex_bonds_db_get(secid)
-    if moex_bond_info and bond_info:
+    if bond_info:
         logger.info(f"Loaded info for secid {secid}: {bond_info}")
     else:
         logger.error(f"Loading info for secid {secid} failed")
 
-    buy_price = moex_bond_info.get('LAST', '') or moex_bond_info.get('PREVPRICE', '')
+    buy_price = None
     ticker = 'не найдено'
     coupon = None
     par_value = None
@@ -188,6 +187,7 @@ def layout(secid="", **kwargs):
         par_value = bond_info.face_value
         mat_date = bond_info.mat_date
         offer_date = bond_info.offer_date
+        buy_price = bond_info.prev_price
 
     sell_date = get_sell_date(mat_date, offer_date)
     sell_type_options = get_sell_type_options(offer_date)
