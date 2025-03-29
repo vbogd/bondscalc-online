@@ -21,8 +21,10 @@ _perpetual_mat_date = html.Span("Бессрочно", className="text-danger")
 def _get_calc_link(bond: BasicBondInfo):
     if bond.coupon_percent is not None:
         coupon_str = f'{bond.coupon_percent} %'
+        coupon_left_suffix = f'• {bond.coupon_value} {currency_str(bond.face_unit)}'
     else:
         coupon_str = "-"
+        coupon_left_suffix = ""
 
     if bond.coupon_percent is not None and bond.prev_price is not None and bond.prev_price != 0:
         cur_yield = f'{round(bond.coupon_percent / bond.prev_price * 100, 2)} %'
@@ -67,7 +69,7 @@ def _get_calc_link(bond: BasicBondInfo):
 
             dbc.Row([
                 col(html.Span(
-                    f'Купон • {bond.coupon_value} {currency_str(bond.face_unit)}',
+                    f'Купон {coupon_left_suffix}',
                     className="text-muted")
                 ),
                 auto_col(coupon_str)
