@@ -19,9 +19,15 @@ logger = logging.getLogger(__name__)
 _perpetual_mat_date = html.Span("Бессрочно", className="text-danger")
 
 def _get_calc_link(bond: BasicBondInfo):
-    if bond.coupon_percent:
-        coupon_str = f'{bond.coupon_value} {currency_str(bond.face_unit)} | {bond.coupon_percent} %'
-    else: coupon_str = "-"
+    if bond.coupon_percent is not None:
+        coupon_str = f'{bond.coupon_percent} %'
+    else:
+        coupon_str = "-"
+
+    if bond.coupon_percent is not None and bond.prev_price is not None and bond.prev_price != 0:
+        cur_yield = f'{round(bond.coupon_percent / bond.prev_price * 100, 2)} %'
+    else:
+        cur_yield = "-"
 
     def col(children: Any):
         return dbc.Col(children)
@@ -33,7 +39,7 @@ def _get_calc_link(bond: BasicBondInfo):
             dbc.Row([
                 auto_col(html.H5(bond.shortname, className="card-title")),
                 # dbc.Col(html.Span("•", className="text-muted"), className="p-0", width="auto"),
-                col(html.Small(bond.isin, className="text-muted")),
+                dbc.Col(html.Small(bond.isin, className="text-muted"), className="p-0"),
                 auto_col(
                     dbc.Badge(
                         bond.list_level,
@@ -60,8 +66,24 @@ def _get_calc_link(bond: BasicBondInfo):
             ]),
 
             dbc.Row([
-                col(html.Span("Купон", className="text-muted")),
+                col(html.Span(
+                    f'Купон • {bond.coupon_value} {currency_str(bond.face_unit)}',
+                    className="text-muted")
+                ),
                 auto_col(coupon_str)
+            ]),
+
+            dbc.Row([
+                col(html.Span("Тек. доходность", className="text-muted")),
+                auto_col(html.B(cur_yield)),
+            ]),
+
+            dbc.Row([
+                col(html.Span("Цена", className="text-muted")),
+                auto_col(html.Span(
+                    bond.prev_price,
+                    className="text-danger" if ((bond.prev_price or 0) > 100) else ""
+                )),
             ]),
         ],
         href=f"calc/{bond.secid}"

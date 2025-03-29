@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import atexit
+from datetime import datetime
 
 import dash
 from apscheduler.triggers.interval import IntervalTrigger
@@ -8,7 +9,7 @@ import dash_bootstrap_components as dbc
 import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from data import update_local_bonds_db, db_create_tables
+from data import update_local_bonds_db, db_create_tables, update_local_db_marketdata
 
 logging.basicConfig(
     level=logging.INFO,
@@ -36,13 +37,24 @@ app.layout = dbc.Container([
 def init_app():
     db_create_tables()
     scheduler.start()
-    update_local_bonds_db()
-    scheduler.add_job(
+
+    # schedule jobs
+    update_securities_job = scheduler.add_job(
         func=update_local_bonds_db,
         trigger=IntervalTrigger(hours=1),
         replace_existing=True,
     )
-    # Shut down the scheduler when exiting the app
+    update_marketdata_job = scheduler.add_job(
+        func=update_local_db_marketdata,
+        trigger=IntervalTrigger(minutes=1),
+        replace_existing=True,
+    )
+
+    # execute jobs now
+    update_securities_job.modify(next_run_time=datetime.now())
+    update_marketdata_job.modify(next_run_time=datetime.now())
+
+    # shut down the scheduler when exiting the app
     atexit.register(lambda: scheduler.shutdown())
 
 
