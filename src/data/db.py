@@ -121,6 +121,7 @@ def moex_marketdata_db_update(rows: list[BondMarketData]):
     con = _db_connection()
     try:
         with con:
+            con.execute("DELETE FROM moex_marketdata")
             for r in rows:
                 con.execute('''
                         INSERT OR REPLACE INTO moex_marketdata
