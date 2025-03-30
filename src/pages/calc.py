@@ -2,7 +2,7 @@ from datetime import date, timedelta
 from typing import Any
 
 import dash
-from dash import html, callback, Output, Input, State
+from dash import html, callback, Output, Input, State, clientside_callback, ClientsideFunction
 import dash_bootstrap_components as dbc
 import logging
 
@@ -136,8 +136,12 @@ def switch_sell_type(sell_type, sell_price, mat_date, offer_date, buy_date):
         sell_date = date.fromisoformat(buy_date) + timedelta(days=1)
     return sell_date, sell_price
 
-@callback(
-Output('result_profitability', 'children'),
+clientside_callback(
+    ClientsideFunction(
+        namespace='clientside',
+        function_name='calculate'
+    ),
+    Output('result_profitability', 'children'),
     Output('result_current_yield', 'children'),
     Output('result_income', 'children'),
     Output('result_days', 'children'),
@@ -151,6 +155,24 @@ Output('result_profitability', 'children'),
     Input('sell_price', 'value'),
     Input('sell_type', 'value'),
 )
+
+
+# @callback(
+# Output('result_profitability', 'children'),
+#     Output('result_current_yield', 'children'),
+#     Output('result_income', 'children'),
+#     Output('result_days', 'children'),
+#     Input('commission', 'value'),
+#     Input('tax', 'value'),
+#     Input('coupon', 'value'),
+#     Input('par_value', 'value'),
+#     Input('buy_date', 'value'),
+#     Input('buy_price', 'value'),
+#     Input('sell_date', 'value'),
+#     Input('sell_price', 'value'),
+#     Input('sell_type', 'value'),
+# )
+# NOTE: unused
 def run_calculator(
     *args
 ):
