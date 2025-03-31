@@ -6,7 +6,7 @@ from dash import html, callback, Output, Input, State, clientside_callback, Clie
 import dash_bootstrap_components as dbc
 import logging
 
-from data import calculate, moex_bonds_db_get
+from data import moex_bonds_db_get
 
 
 def _title(secid=""):
@@ -155,38 +155,6 @@ clientside_callback(
     Input('sell_price', 'value'),
     Input('sell_type', 'value'),
 )
-
-
-# @callback(
-# Output('result_profitability', 'children'),
-#     Output('result_current_yield', 'children'),
-#     Output('result_income', 'children'),
-#     Output('result_days', 'children'),
-#     Input('commission', 'value'),
-#     Input('tax', 'value'),
-#     Input('coupon', 'value'),
-#     Input('par_value', 'value'),
-#     Input('buy_date', 'value'),
-#     Input('buy_price', 'value'),
-#     Input('sell_date', 'value'),
-#     Input('sell_price', 'value'),
-#     Input('sell_type', 'value'),
-# )
-# NOTE: unused
-def run_calculator(
-    *args
-):
-    print("args:", args)
-    result = calculate(args)
-    if result:
-        return (
-            f"{round(result['profitability'], 2)}",
-            f"{round(result['current_yield'], 2)}",
-            f"{round(result['income'], 2)}",
-            f"{result['days']:,}".replace(',',' '),
-        )
-    else:
-        return '', '', '', ''
 
 def layout(secid="", **kwargs):
     logger.info(f"Loading info for secid {secid} ...")

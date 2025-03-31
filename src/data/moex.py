@@ -103,24 +103,18 @@ def _to_dict(moex_json, columns: list[str]):
     ]
 
 
-# valid MOEX bonds boards
-_valid_boards = ["TQCB", "TQOB", "TQIR"]
-
-
-def _filter_by_board(data: list[dict]) -> dict:
-    return next((bond for bond in data if bond['BOARDID'] in _valid_boards), {})
-
-
 def _fix_date(date_str: str) -> str:
     if date_str and date_str != '0000-00-00':
         return write_date(parse(date_str))
     else:
         return ''
 
+
 def _to_optional_date(date_str: str) -> date | None:
     if date_str and date_str != '0000-00-00':
         return date.fromisoformat(date_str)
     else: return None
+
 
 def _to_date(date_str: str) -> date:
     return date.fromisoformat(date_str)
