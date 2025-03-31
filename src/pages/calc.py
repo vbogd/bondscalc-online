@@ -1,12 +1,11 @@
-from datetime import date, timedelta
-from typing import Any
-
 import dash
 from dash import html, callback, Output, Input, State, clientside_callback, ClientsideFunction
 import dash_bootstrap_components as dbc
 import logging
 
-from data import moex_bonds_db_get
+from datetime import date, timedelta
+from typing import Any
+from data import moex_bonds_db_get, currency_str
 
 
 def _title(secid=""):
@@ -58,43 +57,47 @@ def col_input(
         width=6,
     )
 
-result_card = dbc.Card(
-    [
-        dbc.CardHeader("результаты"),
-        dbc.CardBody(
-            [
-                # html.H4("Card title", className="card-title"),
-                dbc.Row([
-                    dbc.Col(html.Span("доходность, год", className="card-text")),
-                    dbc.Col([
-                        html.Span("", className="card-text", id="result_profitability"),
-                        html.Span("%", className="card-text ms-1")
-                    ], width="auto")
-                ], justify="between"),
-                dbc.Row([
-                    dbc.Col(html.Span("тек. доходность", className="card-text")),
-                    dbc.Col([
-                        html.Span("", className="card-text", id="result_current_yield"),
-                        html.Span("%", className="card-text ms-1")
-                    ], width="auto")
-                ], justify="between"),
-                dbc.Row([
-                    dbc.Col(html.Span("прибыль", className="card-text")),
-                    dbc.Col([
-                        html.Span("", className="card-text", id="result_income"),
-                        html.Span("₽", className="card-text ms-1")
-                    ], width="auto")
-                ], justify="between"),
-                dbc.Row([
-                    dbc.Col(html.Span("срок, дней", className="card-text")),
-                    dbc.Col(html.Span("", className="card-text", id="result_days"), width="auto")
-                ], justify="between"),
-            ]
-        ),
-    ],
-    className="mt-1"
-    # style={"width": "18rem"},
-)
+def result_card(
+        face_unit: str,
+):
+    face_unit_str = currency_str(face_unit)
+    return dbc.Card(
+        [
+            dbc.CardHeader("результаты"),
+            dbc.CardBody(
+                [
+                    # html.H4("Card title", className="card-title"),
+                    dbc.Row([
+                        dbc.Col(html.Span("доходность, год", className="card-text")),
+                        dbc.Col([
+                            html.Span("", className="card-text", id="result_profitability"),
+                            html.Span("%", className="card-text ms-1")
+                        ], width="auto")
+                    ], justify="between"),
+                    dbc.Row([
+                        dbc.Col(html.Span("тек. доходность", className="card-text")),
+                        dbc.Col([
+                            html.Span("", className="card-text", id="result_current_yield"),
+                            html.Span("%", className="card-text ms-1")
+                        ], width="auto")
+                    ], justify="between"),
+                    dbc.Row([
+                        dbc.Col(html.Span("прибыль", className="card-text")),
+                        dbc.Col([
+                            html.Span("", className="card-text", id="result_income"),
+                            html.Span(face_unit_str, className="card-text ms-1")
+                        ], width="auto")
+                    ], justify="between"),
+                    dbc.Row([
+                        dbc.Col(html.Span("срок, дней", className="card-text")),
+                        dbc.Col(html.Span("", className="card-text", id="result_days"), width="auto")
+                    ], justify="between"),
+                ]
+            ),
+        ],
+        className="mt-1"
+        # style={"width": "18rem"},
+    )
 
 def layout_row(*arg):
     return dbc.Row(
@@ -170,6 +173,7 @@ def layout(secid="", **kwargs):
     par_value = None
     mat_date = None
     offer_date = None
+    face_unit = ''
 
     if bond_info:
         ticker = bond_info.shortname
@@ -178,6 +182,7 @@ def layout(secid="", **kwargs):
         mat_date = bond_info.mat_date
         offer_date = bond_info.offer_date
         buy_price = bond_info.prev_price
+        face_unit = bond_info.face_unit
 
     sell_date = get_sell_date(mat_date, offer_date)
     sell_type_options = get_sell_type_options(offer_date)
@@ -225,5 +230,5 @@ def layout(secid="", **kwargs):
             col_input(type="date", id="sell_date", placeholder="дата", value=sell_date),
             col_input(type="number", id="sell_price", placeholder="цена", value='100')
         ),
-        result_card,
+        result_card(face_unit),
     ]
