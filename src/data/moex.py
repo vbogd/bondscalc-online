@@ -19,7 +19,7 @@ class BasicBondInfo(NamedTuple):
     # MOEX: LISTLEVEL
     # values: 1, 2 or 3
     list_level: int
-    # MOEX: COUPONVALUE, 0 if unknown
+    # MOEX: COUPONVALUE, 0 if unknown, Сумма купона, в валюте номинала
     coupon_value: float | None
     # MOEX: NEXTCOUPON
     coupon_date: date

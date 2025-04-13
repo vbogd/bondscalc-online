@@ -1,4 +1,3 @@
-from datetime import date
 from typing import Any
 
 import dash
@@ -6,7 +5,7 @@ from dash import html, callback, Input, Output
 import dash_bootstrap_components as dbc
 import logging
 
-from data import moex_bonds_db_search, BasicBondInfo, write_date, currency_str
+from data import moex_bonds_db_search, BasicBondInfo, write_date, currency_str, write_optional_date
 
 dash.register_page(
     __name__,
@@ -140,6 +139,3 @@ def layout(**kwargs):
             ),
         ), className="g-1 pt-1 m-2",),
     ]
-
-def write_optional_date(v: date | None) -> str | None:
-    return None if v is None else write_date(v)
